@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #12211c;
+  --ink-soft: #1d332c;
+  --paper: #f6f1e6;
+  --paper-2: #efe6d4;
+  --gold: #c4a265;
+  --gold-2: #e8d5a8;
+  --muted: #6b726c;
+  --line: rgba(18, 33, 28, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--ink);
+  font-family: var(--font-sans), "PingFang SC", "Noto Sans SC", sans-serif;
+}
+
+.font-serif {
+  font-family: var(--font-serif), "Songti SC", serif;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(18, 33, 28, 0.18);
+  border-radius: 999px;
+}

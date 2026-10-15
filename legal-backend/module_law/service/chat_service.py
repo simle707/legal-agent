@@ -12,6 +12,7 @@ from module_law.service.agent.llm_service import LLMService
 from module_law.service.agent.memory_service import MemoryService
 from module_law.service.agent.tools import registry as default_registry
 from core.rag_engine import get_engine
+from module_law.service.agent.citation_guard import CitationGuard
 
 
 class ChatService:
@@ -103,11 +104,28 @@ class ChatService:
             result = self._fallback(query, known)
 
         # ⑤ 数字校验：回答里的金额必须能在工具结果里找到
+        # if result.get('answer'):
+        #     tool_outputs = [t for t in result.get('trace', []) if t.get('ok')]
+        #     if tool_outputs and not verify_numbers(result['answer'], tool_outputs):
+        #         result['warning'] = (result.get('warning', '') +
+        #                              ' | 回答中出现无法追溯的金额，请核对').strip(' |')
+
         if result.get('answer'):
-            tool_outputs = [t for t in result.get('trace', []) if t.get('ok')]
-            if tool_outputs and not verify_numbers(result['answer'], tool_outputs):
-                result['warning'] = (result.get('warning', '') +
-                                     ' | 回答中出现无法追溯的金额，请核对').strip(' |')
+            retrieved, tool_out = [], []
+            for t in result.get('trace', []):
+                if not t.get('ok'):
+                    continue
+                if t.get('tool') == 'search_law' and isinstance(t.get('result'), dict):
+                    retrieved.extend(t['result'].get('articles', []))
+                else:
+                    tool_out.append(t.get('result'))
+
+        guard = CitationGuard(retrieved, tool_out)
+        report  = guard.check(result['answer'])
+        result['citation'] = report
+        if not report['pass']:
+            result['answer'], _ = guard.enforce(result['answer'], strategy='mark')
+            result['warning'] = (result.get('warning', '') + ' | ' + report['summary']).strip(' |')
 
         # ⑥ 回写短期记忆
         self.memory.append_turn(session_id, 'user', question)

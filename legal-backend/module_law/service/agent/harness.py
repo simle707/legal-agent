@@ -114,12 +114,24 @@ class AgentHarness:
                 try:
                     result = self.registry.execute(name, args)
                     ok, err = True, None
+                    if isinstance(result, dict) and 'articles' in result:
+                        digest = [a.get('article_no') for a in result['articles']]
+                    else:
+                        digest = None
                 except Exception as e:
                     result = {'error': str(e)}
                     ok, err = False, str(e)
+                    digest = None
 
-                trace.append({'step': step, 'tool': name, 'args': args,
-                            'ok': ok, 'err': err})
+                trace.append({
+                    'step': step, 
+                    'tool': name, 
+                    'args': args,
+                    'ok': ok, 
+                    'err': err,
+                    'retrieved_nos': digest,
+                    'result': result
+                })
                 messages.append({
                     'role': 'tool', 'tool_call_id': c['id'], 'name': name,
                     'content': json.dumps(result, ensure_ascii=False, default=str),
